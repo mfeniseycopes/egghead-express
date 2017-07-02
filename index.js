@@ -1,6 +1,7 @@
 var express = require('express')
 var fs = require('fs')
 var _ = require('lodash')
+var engines = require('consolidate')
 
 // create an instance of app
 var app = express()
@@ -16,11 +17,17 @@ fs.readFile('users.json', { encoding: 'utf8' }, function(err, data) {
   })
 })
 
+// whenever we see an extension with 'hbs' use engines.handlebars engine
+// while jade extensions are supported by express, hbs is not, so we need
+// to explicitly define it
+app.engine('hbs', engines.handlebars)
+
 // when we render a view look here
 app.set('views', './views')
+
 // use this engine
-// jade is a haml-like engine
-app.set('view engine', 'jade')
+// handlebars is is a html engine
+app.set('view engine', 'hbs')
 
 // define a route, which console logs all requests, then sends it off to
 // other route handlers

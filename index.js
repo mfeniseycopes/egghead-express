@@ -14,8 +14,13 @@ fs.readFile('users.json', { encoding: 'utf8' }, function(err, data) {
     user.name.full = _.startCase(user.name.first + ' ' + user.name.last)
     return user
   })
-  console.log(users)
 })
+
+// when we render a view look here
+app.set('views', './views')
+// use this engine
+// jade is a haml-like engine
+app.set('view engine', 'jade')
 
 // define a route, which console logs all requests, then sends it off to
 // other route handlers
@@ -25,12 +30,7 @@ app.get('/:anything', function(req, res, next) {
 })
 
 app.get('/', function(req, res, next) {
-
-  var buffer = users.reduce(function(acc, user) {
-    acc += '<a href="/' + user.username + '">' + user.name.full + '</a></br>'
-    return acc
-  }, '')
-  res.send(buffer)
+  res.render('index', { users: users })
 })
 
 app.get('/:username', function(req, res) {

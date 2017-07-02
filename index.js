@@ -29,6 +29,11 @@ app.set('views', './views')
 // handlebars is is a html engine
 app.set('view engine', 'hbs')
 
+// any assets, look inside 'images' directory 
+// app.use(express.static('images'))
+// any assets prefixed with '/profilepics', look in the 'images' directory
+app.use('/profilepics', express.static('images'))
+
 // define a route, which console logs all requests, then sends it off to
 // other route handlers
 app.get('/:anything', function(req, res, next) {

@@ -73,15 +73,44 @@ app.get('/', function(req, res, next) {
   })
 })
 
+app.get('/error', function(req, res) {
+  res.status(404).send('ERROR: ' + req.query.from + ' does not exist!')
+})
+
 app.get('/favicon.ico', function(req, res) {
 	res.send('No favicon, stop asking')
 })
 
-app.get('/:username', function(req, res) {
+function verifyUser(req, res, next) {
+	var username = req.params.username
+	var fp = getUserFilePath(username)
+	fs.exists(fp, function(yes) {
+		if (yes) {
+			next()
+    } else {
+      // skip the next handler for this route and move to next defined route
+      // next('route')
+      // use redirect method to go to specific path
+      res.redirect('/error?from=' + req.url)
+		}	
+	})
+}
+
+// string pattern route
+app.get('*.json', function(req, res) {
+  res.download('./users' + req.path)
+})
+
+// will go through verifyUser, then anonymous function
+app.get('/:username', verifyUser, function(req, res) {
   var username = req.params.username
   var user = getUser(username)
 	console.log(user)
   res.render('user', { user: user, address: user.location })
+})
+
+app.get('/:missing', function(req, res) {
+  res.send('WHOOOPS! That user isn\'t available')
 })
 
 app.put('/:username', function(req, res) {

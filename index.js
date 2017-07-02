@@ -4,33 +4,10 @@ var _ = require('lodash')
 var engines = require('consolidate')
 var bodyParser = require('body-parser')
 var path = require('path')
+var helpers = require('./helpers')
 
 // create an instance of app
 var app = express()
-
-function getUserFilePath (username) {
-  return path.join(__dirname, 'users', username) + '.json'
-}
-
-function getUser(username) {
-  var user = JSON.parse(fs.readFileSync(getUserFilePath(username), {encoding: 'utf8'}))
-  user.name.full = _.startCase(user.name.first + ' ' + user.name.last)
-  _.keys(user.location).forEach(function (key) {
-    user.location[key] = _.startCase(user.location[key])
-  })
-  return user
-}
-
-function saveUser (username, data) {
-  var fp = getUserFilePath(username)
-  fs.unlinkSync(fp) // delete the file
-  fs.writeFileSync(fp, JSON.stringify(data, null, 2), {encoding: 'utf8'})
-}
-
-function deleteUser (username) {
-  var fp = getUserFilePath(username)
-  fs.unlinkSync(fp) // delete the file
-}
 
 // whenever we see an extension with 'hbs' use engines.handlebars engine
 // while jade extensions are supported by express, hbs is not, so we need
@@ -81,21 +58,6 @@ app.get('/favicon.ico', function(req, res) {
 	res.send('No favicon, stop asking')
 })
 
-function verifyUser(req, res, next) {
-	var username = req.params.username
-	var fp = getUserFilePath(username)
-	fs.exists(fp, function(yes) {
-		if (yes) {
-			next()
-    } else {
-      // skip the next handler for this route and move to next defined route
-      // next('route')
-      // use redirect method to go to specific path
-      res.redirect('/error?from=' + req.url)
-		}	
-	})
-}
-
 // string pattern route
 app.get('*.json', function(req, res) {
   res.download('./users' + req.path)
@@ -106,23 +68,23 @@ app.route('/:username')
     console.log(req.method, 'for', req.params.username)
     next()
   })
-  // will go through verifyUser, then anonymous function
-  .get(verifyUser, function(req, res) {
+  // will go through helpers.verifyUser, then anonymous function
+  .get(helpers.verifyUser, function(req, res) {
     var username = req.params.username
-    var user = getUser(username)
+    var user = helpers.getUser(username)
     res.render('user', { user: user, address: user.location })
   })
   .put(function(req, res) {
     var username = req.params.username
-    var user = getUser(username)
+    var user = helpers.getUser(username)
     // req.body will be the data object passed into ajax req
     user.location = req.body.location
-    saveUser(username, user)
+    helpers.saveUser(username, user)
     res.end()
   })
   .delete(function(req, res) {
     var username = req.params.username
-    deleteUser(username)
+    helpers.deleteUser(username)
     res.sendStatus(200)
   })
 

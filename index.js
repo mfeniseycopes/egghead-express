@@ -8,17 +8,6 @@ var path = require('path')
 // create an instance of app
 var app = express()
 
-// read some dummy data
-let users = []
-fs.readFile('users.json', { encoding: 'utf8' }, function(err, data) {
-  if (err) throw err
-
-  users = JSON.parse(data).map(function(user) {
-    user.name.full = _.startCase(user.name.first + ' ' + user.name.last)
-    return user
-  })
-})
-
 function getUserFilePath (username) {
   return path.join(__dirname, 'users', username) + '.json'
 }
@@ -70,7 +59,18 @@ app.get('/:anything', function(req, res, next) {
 })
 
 app.get('/', function(req, res, next) {
-  res.render('index', { users: users })
+  // fetch users from '/users' on page load, not server load
+  var users = []
+  fs.readdir('users', function (err, files) {
+    files.forEach(function (file) {
+      fs.readFile(path.join(__dirname, 'users', file), {encoding: 'utf8'}, function (err, data) {
+        var user = JSON.parse(data)
+        user.name.full = _.startCase(user.name.first + ' ' + user.name.last)
+        users.push(user)
+        if (users.length === files.length) res.render('index', {users: users})
+      })
+    })
+  })
 })
 
 app.get('/favicon.ico', function(req, res) {

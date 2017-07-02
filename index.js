@@ -2,6 +2,8 @@ var express = require('express')
 var fs = require('fs')
 var _ = require('lodash')
 var engines = require('consolidate')
+var bodyParser = require('body-parser')
+var path = require('path')
 
 // create an instance of app
 var app = express()
@@ -16,6 +18,30 @@ fs.readFile('users.json', { encoding: 'utf8' }, function(err, data) {
     return user
   })
 })
+
+function getUserFilePath (username) {
+  return path.join(__dirname, 'users', username) + '.json'
+}
+
+function getUser(username) {
+  var user = JSON.parse(fs.readFileSync(getUserFilePath(username), {encoding: 'utf8'}))
+  user.name.full = _.startCase(user.name.first + ' ' + user.name.last)
+  _.keys(user.location).forEach(function (key) {
+    user.location[key] = _.startCase(user.location[key])
+  })
+  return user
+}
+
+function saveUser (username, data) {
+  var fp = getUserFilePath(username)
+  fs.unlinkSync(fp) // delete the file
+  fs.writeFileSync(fp, JSON.stringify(data, null, 2), {encoding: 'utf8'})
+}
+
+function deleteUser (username) {
+  var fp = getUserFilePath(username)
+  fs.unlinkSync(fp) // delete the file
+}
 
 // whenever we see an extension with 'hbs' use engines.handlebars engine
 // while jade extensions are supported by express, hbs is not, so we need
@@ -34,6 +60,8 @@ app.set('view engine', 'hbs')
 // any assets prefixed with '/profilepics', look in the 'images' directory
 app.use('/profilepics', express.static('images'))
 
+// our data will be urlencoded, do all the parsing it can
+app.use(bodyParser.urlencoded({ extended: true })) 
 // define a route, which console logs all requests, then sends it off to
 // other route handlers
 app.get('/:anything', function(req, res, next) {
@@ -45,9 +73,30 @@ app.get('/', function(req, res, next) {
   res.render('index', { users: users })
 })
 
+app.get('/favicon.ico', function(req, res) {
+	res.send('No favicon, stop asking')
+})
+
 app.get('/:username', function(req, res) {
   var username = req.params.username
-  res.render('user', { user: users.find(function(user) { return user.username == username })})
+  var user = getUser(username)
+	console.log(user)
+  res.render('user', { user: user, address: user.location })
+})
+
+app.put('/:username', function(req, res) {
+  var username = req.params.username
+  var user = getUser(username)
+  // req.body will be the data object passed into ajax req
+  user.location = req.body.location
+  saveUser(username, user)
+  res.end()
+})
+
+app.delete('/:username', function(req, res) {
+  var username = req.params.username
+  deleteUser(username)
+  res.sendStatus(200)
 })
 
 // start the server on port 3000

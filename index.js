@@ -101,31 +101,33 @@ app.get('*.json', function(req, res) {
   res.download('./users' + req.path)
 })
 
-// will go through verifyUser, then anonymous function
-app.get('/:username', verifyUser, function(req, res) {
-  var username = req.params.username
-  var user = getUser(username)
-	console.log(user)
-  res.render('user', { user: user, address: user.location })
-})
+app.route('/:username')
+  .all(function(req, res, next) {
+    console.log(req.method, 'for', req.params.username)
+    next()
+  })
+  // will go through verifyUser, then anonymous function
+  .get(verifyUser, function(req, res) {
+    var username = req.params.username
+    var user = getUser(username)
+    res.render('user', { user: user, address: user.location })
+  })
+  .put(function(req, res) {
+    var username = req.params.username
+    var user = getUser(username)
+    // req.body will be the data object passed into ajax req
+    user.location = req.body.location
+    saveUser(username, user)
+    res.end()
+  })
+  .delete(function(req, res) {
+    var username = req.params.username
+    deleteUser(username)
+    res.sendStatus(200)
+  })
 
 app.get('/:missing', function(req, res) {
   res.send('WHOOOPS! That user isn\'t available')
-})
-
-app.put('/:username', function(req, res) {
-  var username = req.params.username
-  var user = getUser(username)
-  // req.body will be the data object passed into ajax req
-  user.location = req.body.location
-  saveUser(username, user)
-  res.end()
-})
-
-app.delete('/:username', function(req, res) {
-  var username = req.params.username
-  deleteUser(username)
-  res.sendStatus(200)
 })
 
 // start the server on port 3000

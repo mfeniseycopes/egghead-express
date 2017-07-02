@@ -47,7 +47,7 @@ app.get('/', function(req, res, next) {
 
 app.get('/:username', function(req, res) {
   var username = req.params.username
-  res.send(username)
+  res.render('user', { user: users.find(function(user) { return user.username == username })})
 })
 
 // start the server on port 3000

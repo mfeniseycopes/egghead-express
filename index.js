@@ -50,6 +50,13 @@ app.get('/', function(req, res, next) {
   })
 })
 
+app.get('/data/:username', function(req, res) {
+  var username = req.params.username
+  var readable = fs.createReadStream('./users/' + username + '.json')
+  // non-blocking pipe of user's file into response
+  readable.pipe(res)
+})
+
 app.get('/error', function(req, res) {
   res.status(404).send('ERROR: ' + req.query.from + ' does not exist!')
 })

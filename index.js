@@ -5,6 +5,7 @@ var helpers = require('./helpers')
 var fs = require('fs')
 var path = require('path')
 var _ = require('lodash')
+var JSONStream = require('JSONStream')
 
 // create an instance of app
 var app = express()
@@ -55,6 +56,17 @@ app.get('/data/:username', function(req, res) {
   var readable = fs.createReadStream('./users/' + username + '.json')
   // non-blocking pipe of user's file into response
   readable.pipe(res)
+})
+
+app.get('/users/by/:gender', function(req, res) {
+  var gender = req.params.gender
+  var readable = fs.createReadStream('./users.json')
+
+  readable.pipe(JSONStream.parse('*', function(user) {
+    if (user.gender === gender) return user
+  }))
+  	.pipe(JSONStream.stringify('[\n  ', ',\n  ', '\n]\n'))
+		.pipe(res)
 })
 
 app.get('/error', function(req, res) {

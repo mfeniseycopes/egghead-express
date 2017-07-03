@@ -1,10 +1,10 @@
 var express = require('express')
-var fs = require('fs')
-var _ = require('lodash')
 var engines = require('consolidate')
 var bodyParser = require('body-parser')
-var path = require('path')
 var helpers = require('./helpers')
+var fs = require('fs')
+var path = require('path')
+var _ = require('lodash')
 
 // create an instance of app
 var app = express()
@@ -63,30 +63,8 @@ app.get('*.json', function(req, res) {
   res.download('./users' + req.path)
 })
 
-app.route('/:username')
-  .all(function(req, res, next) {
-    console.log(req.method, 'for', req.params.username)
-    next()
-  })
-  // will go through helpers.verifyUser, then anonymous function
-  .get(helpers.verifyUser, function(req, res) {
-    var username = req.params.username
-    var user = helpers.getUser(username)
-    res.render('user', { user: user, address: user.location })
-  })
-  .put(function(req, res) {
-    var username = req.params.username
-    var user = helpers.getUser(username)
-    // req.body will be the data object passed into ajax req
-    user.location = req.body.location
-    helpers.saveUser(username, user)
-    res.end()
-  })
-  .delete(function(req, res) {
-    var username = req.params.username
-    helpers.deleteUser(username)
-    res.sendStatus(200)
-  })
+var userRouter = require('./username')
+app.use('/:username', userRouter)
 
 app.get('/:missing', function(req, res) {
   res.send('WHOOOPS! That user isn\'t available')
